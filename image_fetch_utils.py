@@ -4,10 +4,15 @@ from io import BytesIO
 base_path = "https://coinquilinipercaso.altervista.org/IoTProject/"
 camera_url = base_path + "camera.php"
 require_new_frame_url = base_path + "require_image.php"
+is_image_request_pending_path = base_path + "is_there_camera_image_pending.php"
 password = ""
 
 def require_new_frame():
     requests.get(require_new_frame_url, params={"password":password}, stream=True)
+
+def is_image_request_pending():
+    response = requests.get(is_image_request_pending_path, params={"password":password}, stream=True)
+    return response.content == b'True'
 
 def fetch_image():
     try:
