@@ -20,6 +20,7 @@ from model.classes.veichle_detection_cnn import *
 class ParkChecker(QWidget):
     def __init__(self, interval=300):
         super().__init__()
+        WebServer.init()
         self.setWindowTitle("Park Checker - Split View")
         self.setGeometry(100, 100, 200*3, 480) 
 
