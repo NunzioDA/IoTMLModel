@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms
 
-# Trasformazioni immagine
+# Transforming image
 transform = transforms.Compose([
     transforms.Resize((72, 42)),
     transforms.ToTensor(),
@@ -11,6 +11,8 @@ transform = transforms.Compose([
                          std=[0.229, 0.224, 0.225])
 ])
 
+# This class describes the CNN used to check 
+# if a veicle is present in a parking space
 class VehicleDetectionCNN(nn.Module):
     def __init__(self):
         super(VehicleDetectionCNN, self).__init__()
@@ -30,7 +32,7 @@ class VehicleDetectionCNN(nn.Module):
         
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        # Calcolo delle dimensioni dopo 4 pool:
+        # Dimension after 4 convolutional and pool:
         # 72x42 → 36x21 → 18x10 → 9x5 → 4x2
         self.fc1 = nn.Linear(256 * 4 * 2, 256)
         self.fc2 = nn.Linear(256, 128)
@@ -50,7 +52,7 @@ class VehicleDetectionCNN(nn.Module):
         x = torch.flatten(x, start_dim=1)
         x = self.dropout(F.relu(self.fc1(x)))
         x = self.dropout(F.relu(self.fc2(x)))
-        x = self.fc3(x)  # Niente sigmoid qui: usi BCEWithLogitsLoss
+        x = self.fc3(x)  
 
         x = self.sigmoid(x)
         return x
