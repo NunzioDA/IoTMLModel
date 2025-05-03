@@ -1,4 +1,6 @@
 
+from io import BytesIO
+import json
 import os
 from dotenv import load_dotenv
 import requests
@@ -6,8 +8,11 @@ import requests
 # This class is used to communicate with the WebServer.
 #
 class WebServer:
-    command_queue_file = "get_command_queue.php"
-    status_script_file = "update_status.php"
+    camera_url = "camera.php"
+    require_new_frame_url =  "require_image.php"
+    is_image_request_pending_path = "is_there_camera_image_pending.php"
+    update_cv_prediction_path = "update_cv_prediction.php"
+
     password = ""
     base_url = ""
 
@@ -19,20 +24,37 @@ class WebServer:
         WebServer.base_url = os.getenv("BACKEND")
         WebServer.password = os.getenv("PASSWORD")
   
-        WebServer.command_queue_file = WebServer.base_url + WebServer.command_queue_file
-        WebServer.status_script_file = WebServer.base_url + WebServer.status_script_file
+        WebServer.camera_url = WebServer.base_url + WebServer.camera_url
+        WebServer.require_new_frame_url = WebServer.base_url + WebServer.require_new_frame_url
+        WebServer.is_image_request_pending_path = WebServer.base_url + WebServer.is_image_request_pending_path
+        WebServer.update_cv_prediction_path = WebServer.base_url + WebServer.update_cv_prediction_path
 
-    # Ths method is used to update the
-    # enviroment status on the webserver
-    @staticmethod
-    def update_status(info) -> requests.Response:
-        return WebServer.get_request(WebServer.status_script_file, {"info": info})
+    def update_cv_prediction(prediction):
+        WebServer.get_request(WebServer.update_cv_prediction_path, params={"info":json.dumps(prediction)})
 
-    # This method is used to get the command
-    # queue from the web server
-    @staticmethod
-    def get_command_queue(timestamp) -> requests.Response:
-        return WebServer.get_request(WebServer.command_queue_file, {"timestamp": timestamp or "2015-01-01 00:00:00"})
+    def require_new_frame():
+        WebServer.get_request(WebServer.require_new_frame_url, params={}, stream=True)
+
+    def is_image_request_pending():
+        response = WebServer.get_request(WebServer.is_image_request_pending_path, params={}, stream=True)
+        return response.content == b'True'
+
+    def fetch_image():
+        try:
+            response = WebServer.get_request(WebServer.camera_url, params={}, stream=True)
+            response.raise_for_status() 
+
+            if 'image' in response.headers['content-type']:
+                return BytesIO(response.content)
+            else:
+                return None
+
+        except requests.exceptions.RequestException as e:
+            print(f"Request error: {e}")
+        except Exception as e:
+            print(f"Some error occurred: {e}")
+
+        return None
 
 
     # This method is used to make a 
