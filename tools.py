@@ -61,7 +61,7 @@ class WebServer:
     # get request. It automatically uses
     # the specified password in the .env
     @staticmethod
-    def get_request(url, params) -> requests.Response:
+    def get_request(url, params, stream = None) -> requests.Response:
         params["password"] = WebServer.password
         print(params)
-        return requests.get(url, params)
+        return requests.get(url, params, stream = stream)
