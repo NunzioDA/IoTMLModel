@@ -1,5 +1,7 @@
 import sys
 import os
+
+from tools import WebServer
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 from datetime import datetime
 import io
@@ -8,19 +10,18 @@ import torch
 from PIL import Image, ImageDraw
 
 from PyQt6.QtWidgets import QApplication, QLabel, QHBoxLayout, QVBoxLayout, QWidget, QPushButton
-from PyQt6.QtGui import QPixmap, QImage
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import QTimer, Qt
 
-from image_fetch_utils import *
 from image_management import split_image
 from model.classes.veichle_detection_cnn import *
 
 
 class ParkChecker(QWidget):
-    def __init__(self, interval=300):  # Aggiornamento ogni 300ms
+    def __init__(self, interval=300):
         super().__init__()
         self.setWindowTitle("Park Checker - Split View")
-        self.setGeometry(100, 100, 200*3, 480)  # Larghezza triplicata per le tre immagini
+        self.setGeometry(100, 100, 200*3, 480) 
 
         self.labels = [QLabel("Loading...") for _ in range(3)]
         for label in self.labels:
@@ -50,8 +51,8 @@ class ParkChecker(QWidget):
         self.timer.timeout.connect(self.update_image)
         self.timer.start(interval)
 
-        self.current_image_parts_with_boxes = [None] * 3  # Per salvare le ultime parti di immagine con i rettangoli
-        self.original_image_parts = [None] * 3  # Per salvare le parti originali dell'immagine
+        self.current_image_parts_with_boxes = [None] * 3  
+        self.original_image_parts = [None] * 3  
         self.load_model()
 
     def load_model(self):
@@ -60,16 +61,16 @@ class ParkChecker(QWidget):
         self.model.eval()
 
     def update_image(self):
-        if not is_image_request_pending():
+        if not WebServer.is_image_request_pending():
             print("Requiring Image")
-            require_new_frame()
-            image_data = fetch_image()
+            WebServer.require_new_frame()
+            image_data = WebServer.fetch_image()
             if image_data:
                 image = Image.open(image_data).convert('RGB')
                 print("Got image")
                 images_split = split_image(image)
                 self.current_image_parts_with_boxes = [io.BytesIO() for _ in range(3)]
-                self.original_image_parts = list(images_split) # Salva le parti originali
+                self.original_image_parts = list(images_split) # Saving images without borders
                 predictions = []
 
                 for i, img_part in enumerate(images_split):
@@ -79,21 +80,21 @@ class ParkChecker(QWidget):
                         pred = int(output > 0.5)
                         predictions.append(pred)
 
-                    # Crea una copia per disegnare i rettangoli
+                    # Copy to draw borders
                     img_with_boxes = img_part.copy()
                     draw = ImageDraw.Draw(img_with_boxes)
                     color = (0, 255, 0) if pred == 1 else (255, 0, 0)
                     draw.rectangle([0, 0, img_with_boxes.width - 1, img_with_boxes.height - 1], outline=color, width=1)
 
-                    # Salva la parte con i rettangoli in un buffer di memoria
+                
                     img_with_boxes.save(self.current_image_parts_with_boxes[i], format="PNG")
 
-                    # Visualizza l'immagine modificata nella label corrispondente
+                    # Visializing image with borders
                     qt_image = self.pil_to_qt(img_with_boxes)
                     self.labels[i].setPixmap(qt_image)
                     self.labels[i].setScaledContents(True)
                     self.save_buttons[i].setEnabled(True)
-                update_cv_prediction(predictions)
+                WebServer.update_cv_prediction(predictions)
             else:
                 for label in self.labels:
                     label.setText("Failed to load image")
@@ -103,7 +104,7 @@ class ParkChecker(QWidget):
         
 
     def pil_to_qt(self, pil_image):
-        """Converte una PIL Image in QPixmap"""
+        """Convert PIL Image to QPixmap"""
         buffer = io.BytesIO()
         pil_image.save(buffer, format="PNG")
         qt_image = QPixmap()
@@ -111,7 +112,7 @@ class ParkChecker(QWidget):
         return qt_image
 
     def save_image(self, index):
-        """Salva la parte di immagine originale specificata su file"""
+        """Saving image without borders"""
         if self.original_image_parts[index]:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
             buffer = io.BytesIO()
