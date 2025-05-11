@@ -21,7 +21,8 @@ class WebServer:
     @staticmethod
     def init():
         load_dotenv()
-        WebServer.base_url = os.getenv("BACKEND")
+        WebServer.base_url = "https://www.coinquilinipercaso.altervista.org/IoTProject/"
+        WebServer.base_url = WebServer.base_url.encode('utf-8').decode('unicode_escape')
         WebServer.password = os.getenv("PASSWORD")
   
         WebServer.camera_url = WebServer.base_url + WebServer.camera_url
