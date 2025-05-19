@@ -1,7 +1,7 @@
 import sys
 import os
 
-from tools import WebServer
+from tools import SmartParkAPI
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 from datetime import datetime
 import io
@@ -20,7 +20,7 @@ from model.classes.veichle_detection_cnn import *
 class ParkChecker(QWidget):
     def __init__(self, interval=300):
         super().__init__()
-        WebServer.init()
+        SmartParkAPI.init()
         self.setWindowTitle("Park Checker - Split View")
         self.setGeometry(100, 100, 200*3, 480) 
 
@@ -62,10 +62,10 @@ class ParkChecker(QWidget):
         self.model.eval()
 
     def update_image(self):
-        if not WebServer.is_image_request_pending():
+        if not SmartParkAPI.is_image_request_pending():
             print("Requiring Image")
-            WebServer.require_new_frame()
-            image_data = WebServer.fetch_image()
+            SmartParkAPI.require_new_frame()
+            image_data = SmartParkAPI.fetch_image()
             if image_data:
                 image = Image.open(image_data).convert('RGB')
                 print("Got image")
@@ -95,7 +95,7 @@ class ParkChecker(QWidget):
                     self.labels[i].setPixmap(qt_image)
                     self.labels[i].setScaledContents(True)
                     self.save_buttons[i].setEnabled(True)
-                WebServer.update_cv_prediction(predictions)
+                SmartParkAPI.publish_prediction(predictions)
             else:
                 for label in self.labels:
                     label.setText("Failed to load image")
