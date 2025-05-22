@@ -93,7 +93,7 @@ class SmartParkAPI:
     def publish_prediction(prediction):
         print(f"sending {prediction} to {SmartParkAPI.mqtt_ai_park_topic}")
         if(SmartParkAPI.client is not None):
-            SmartParkAPI.client.publish(SmartParkAPI.mqtt_ai_park_topic, payload=str(prediction), qos=2, retain=True)
+            SmartParkAPI.client.publish(SmartParkAPI.mqtt_ai_park_topic, payload=str(prediction), qos=1, retain=True)
         else:
             raise ValueError("mqtt client is None. Please make sure you call SmartParkAPI.init() to initialize the mqtt server.")
 
