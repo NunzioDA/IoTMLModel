@@ -41,9 +41,8 @@ class SmartParkAPI:
     def on_subscribe(client, userdata, mid, granted_qos, properties=None):
         print("Subscribed: " + str(mid) + " " + str(granted_qos))
 
-    # used to send the command to the specified callback function
-    def on_message(client, userdata, msg):
-        SmartParkAPI.on_command(msg.payload.decode())
+    def on_disconnect(client, userdata, mid, reason, prop, rc):
+        print("Disconnected",reason)
     ########################################
 
 
@@ -62,9 +61,9 @@ class SmartParkAPI:
         client.connect(SmartParkAPI.mqtt_server, SmartParkAPI.mqtt_port)
 
         client.on_subscribe = SmartParkAPI.on_subscribe
-        client.on_message = SmartParkAPI.on_message
         client.on_publish = SmartParkAPI.on_publish
-
+        client.on_disconnect = SmartParkAPI.on_disconnect
+        client.loop_start()
         SmartParkAPI.client = client
 
     # Loading base url and password
@@ -128,5 +127,4 @@ class SmartParkAPI:
     @staticmethod
     def get_request(url, params, stream = None) -> requests.Response:
         params["password"] = SmartParkAPI.password
-        print(params)
         return requests.get(url, params, stream = stream)
